@@ -4,6 +4,7 @@
 var _ = require('/presto/libs/underscore');
 var Plugin = require('/presto/plugin');
 var jQ = require('/presto/libs/deferred/jquery-deferred');
+var TiMap = require('ti.map');
 
 /*
 TODO
@@ -14,7 +15,7 @@ TODO
 
 /**
 * @class presto.addons.WhereToFindUs
-* Classic where to find us, with the map and  
+* Classic where to find us, with the map and
 * @extend presto.Plugin
 */
 var WhereToFindUs = Plugin.extend({
@@ -27,9 +28,9 @@ var WhereToFindUs = Plugin.extend({
 	* @chainable
 	*/
 	onInitialize: function() {
-	
+
 		var that = this;
-	
+
 		that.app.registerAction({
 			name: 'directions',
 			label: L('wheretofindus_Directions'),
@@ -37,7 +38,7 @@ var WhereToFindUs = Plugin.extend({
 				that.getDirections();
 			}
 		});
-		
+
 		return that;
 	},
 
@@ -47,34 +48,34 @@ var WhereToFindUs = Plugin.extend({
 	* @return {Object}
 	*/
 	getDefaults: function() {
-	
+
 		var result = this._super.call(this);
-		
+
 		return _.extend(result,{
-			
+
 			/**
 			* @property {String} company
 			* Name of the company
 			*/
 			company: null,
-			
+
 			/**
 			* @property {String} address
 			* Address of the company
 			*/
 			address: null,
-			
+
 			/**
 			* @property {String} zip
 			*/
 			zip: null,
-			
+
 			/**
 			* @property {String} city
 			* City of the company
 			*/
 			city: null,
-			
+
 			/**
 			* @property {String} phone
 			* Clickable phone number
@@ -89,34 +90,34 @@ var WhereToFindUs = Plugin.extend({
 
 			/**
 			* @property {Boolean} userLocation
-			* Boolean indicating if the user's current device location should be shown on the map. 
+			* Boolean indicating if the user's current device location should be shown on the map.
 			* If true, the user's location is marked with a pin.
 			*/
 			userLocation: false,
-			
+
 			/**
 			* @property {Number} mapType
-			* Map type, either: Titanium.Map.STANDARD_TYPE, Titanium.Map.SATELLITE_TYPE or Titanium.Map.HYBRID_TYPE.
+			* Map type, either: Map.STANDARD_TYPE, Map.SATELLITE_TYPE or Map.HYBRID_TYPE.
 			*/
-			mapType: Ti.Map.STANDARD_TYPE,
-			
+			mapType: TiMap.STANDARD_TYPE,
+
 			/**
 			* @property {Number} latitudeDelta
 			* The amount of north-to-south distance displayed on the map, measured in decimal degrees.
 			*/
 			latitudeDelta: 0.1,
-			
+
 			/**
 			* @property {Number} longitudeDelta
 			* The amount of east-to-west distance displayed on the map, measured in decimal degrees.
 			*/
 			longitudeDelta: 0.1,
-			
+
 			action: 'directions'
 
-					
+
 		});
-		
+
 	},
 
 	/**
@@ -125,11 +126,11 @@ var WhereToFindUs = Plugin.extend({
 	* @return {Object}
 	*/
 	getVariables: function() {
-		
+
 		var that = this;
 		var result = that._super.apply(that,arguments);
 		var options = that.getOptions();
-		
+
 		result.company = options.company;
 		result.address = options.address;
 		result.zip = options.zip;
@@ -137,7 +138,7 @@ var WhereToFindUs = Plugin.extend({
 		result.phone = options.phone;
 		result.email = options.email;
 		result.userLocation = options.userLocation;
-		
+
 		return result;
 	},
 
@@ -148,16 +149,16 @@ var WhereToFindUs = Plugin.extend({
 	onLayout: function() {
 
 		var that = this;
-				
+
 		var layoutManager = that.getLayoutManager();
 		var options = that.getOptions();
 		var mapContainer = layoutManager.getById('mapContainer');
-				
-		that._map = Titanium.Map.createView({
-			width: Ti.UI.FILL,						
+
+		that._map = TiMap.createView({
+			width: Ti.UI.FILL,
 			animate: false,
 			height: Ti.UI.FILL,
-			userLocation: options.userLocation,								
+			userLocation: options.userLocation,
 			annotations: [
 				{
 					animate: true,
@@ -165,17 +166,17 @@ var WhereToFindUs = Plugin.extend({
 					longitude: options.longitude,
 					title: options.company,
 					subtitle: options.address+', '+options.city,
-					pincolor: Ti.Map.ANNOTATION_RED
+					pincolor: TiMap.ANNOTATION_RED
 					//rightButton: Titanium.UI.iPhone.SystemButton.INFO_DARK
 					//rightButton: Titanium.UI.iPhone.SystemButton.INFO_LIGHT,
 					//rightButton: Titanium.UI.iPhone.SystemButton.DISCLOSURE,
 					//rightButton: Titanium.UI.iPhone.SystemButton.CONTACT_ADD
-				}					
+				}
 			],
 			mapType: options.mapType,
 			regionFit: true
 		});
-		
+
 		var onComplete = function() {
 			// put a timeout or set region won't work
 			setTimeout(function() {
@@ -186,7 +187,7 @@ var WhereToFindUs = Plugin.extend({
 					latitudeDelta: options.latitudeDelta
 				});
 			},400);
-			
+
 			that._map.removeEventListener('complete',onComplete);
 		};
 
@@ -204,18 +205,18 @@ var WhereToFindUs = Plugin.extend({
 			});
 		}
 		*/
-				
+
 		mapContainer.add(that._map);
-		
+
 	},
-	
+
 	/**
 	* @method getDirections
 	* Open built in map directions
 	* @chainable
 	*/
 	getDirections: function() {
-		
+
 		var that = this;
 		var options = that.getOptions();
 
@@ -227,22 +228,22 @@ var WhereToFindUs = Plugin.extend({
 			} else {
 				alert(L('wheretofindus_ImpossibileToFindCurrentPosition'));
 			}
-			
+
 		});
-		
+
 		return this;
 	},
-	
+
 	/**
 	* @method getCurrentLocationLabel
 	* Get the label of current position in different languages
 	* @return {String}
 	*/
 	getCurrentLocationLabel: function() {
-	
+
 		var that = this;
 		var locale = that.app.getLocale();
-		
+
 		switch (locale) {
 			case 'en': return "Current Location";
 			case 'nl': return "Huidige locatie";
@@ -272,7 +273,7 @@ var WhereToFindUs = Plugin.extend({
 			case 'tr': return "Şu Anki Yer";
 			case 'uk': return "Поточне місце";
 			case 'vi': return "Vị trí Hiện tại";
-			case 'zh': return "当前位置";			
+			case 'zh': return "当前位置";
 		}
 
 	}

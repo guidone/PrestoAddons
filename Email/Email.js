@@ -10,7 +10,6 @@ var Cloud = require('ti.cloud');
 
 TODO
 
-
 */
 
 
@@ -35,7 +34,7 @@ TODO
 *        template: 'my_template',
 *        from: 'noreply@email.it'
 *      });
-* 
+*
 * The plugin will be available as **this.app.signupemail.send()**, in the dictionary it's possibile to include any number of
 * additional custom fields that will be available in the ACS Email template as **{{my_field}}**
 * @extend presto.Plugin
@@ -43,7 +42,7 @@ TODO
 var Email = Plugin.extend({
 
 	className: 'Email',
-	
+
 	/**
 	* @method layout
 	* Null the layout, no window is created
@@ -56,32 +55,32 @@ var Email = Plugin.extend({
 	* @return {Object}
 	*/
 	getDefaults: function() {
-	
+
 		var result = this._super();
-		
-			
-		return _.extend(result,{						
-			
+
+
+		return _.extend(result,{
+
 			// fix id
 			id: 'email',
-			
+
 			/**
 			* @cfg {String} [template=default]
 			* Default template to be used if not specified
 			*/
 			template: 'default',
-			
+
 			/**
 			* @cfg {String} email
 			* The default senders email
 			*/
 			from: null
-			
-			
+
+
 		});
-		
+
 	},
-	
+
 	/**
 	* @method send
 	* Send email through the ACS cloud email, it will populate automatically the template and the from field with the
@@ -93,11 +92,11 @@ var Email = Plugin.extend({
 	* @deferred
 	*/
 	send: function(params) {
-		
+
 		var that = this;
 		var options = that.getOptions();
 		var deferred = jQ.Deferred();
-		
+
 		if (params.template == null) {
 			params.template = options.template;
 		}
@@ -109,21 +108,21 @@ var Email = Plugin.extend({
 				params.from = that.app.session.user.email;
 			}
 		}
-		
+
 		that.app.loader.show(L('Sending'));
 		Cloud.Emails.send(params,function(e) {
 			that.app.loader.hide();
 			if (e.success) {
-				deferred.resolve();	
+				deferred.resolve();
 			} else {
 				deferred.reejct(e);
 			}
 		});
-	
+
 		return deferred.promise();
 	},
 
-	
+
 });
 
 module.exports = Email;
