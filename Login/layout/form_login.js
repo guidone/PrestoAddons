@@ -1,3 +1,6 @@
+/*jshint laxbreak: true,eqnull: true,browser: true,jquery: true,devel: true,regexdash: true,multistr: true, white: false */
+/*global define: true, require: true, module: true, Ti: true, L: true, Titanium: true, Class: true */
+
 module.exports.layout = {
 	type: 'view',
 	className: 'pr-form pr-form-login',
@@ -5,8 +8,11 @@ module.exports.layout = {
 		{
 			type: 'label',
 			className: 'pr-label pr-label-login',
-			text: L('login_CompileFormToSignin')	
-		},		
+			text: function() {
+				var message = this.getVariable('message');
+				return message != null ? message : L('login_CompileFormToSignin');
+			}
+		},
 		{
 			type: 'view',
 			className: 'pr-field pr-field-textfield pr-field-textfield-login',
@@ -16,7 +22,7 @@ module.exports.layout = {
 					className: 'pr-field-label-container pr-field-label-container-login',
 					childs: [
 						{
-							type: 'label',							
+							type: 'label',
 							className: 'pr-field-label pr-field-label-login',
 							text: L('Email')
 						}
@@ -32,7 +38,7 @@ module.exports.layout = {
 							className: 'pr-field-control pr-field-control-textfield pr-field-control-textfield-login'
 						}
 					]
-				}				
+				}
 			]
 		},
 		{
@@ -61,7 +67,7 @@ module.exports.layout = {
 							passwordMask: true
 						}
 					]
-				}				
+				}
 			]
 		},
 		{
@@ -77,7 +83,7 @@ module.exports.layout = {
 				return isFacebook ? 'FACEBOOKBUTTON' : null;
 			}
 		}
-		
+
 		/*,
 		{
 			type: 'view',
@@ -96,9 +102,9 @@ module.exports.layout = {
 					type: 'imageView',
 					className: 'pr-login-socialbutton pr-login-linkedin',
 					left: '15dp'
-				}				
+				}
 			]
-			
+
 		}*/
-	]	
+	]
 };

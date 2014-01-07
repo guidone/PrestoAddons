@@ -166,7 +166,8 @@ var Login = Plugin.extend({
 			isLogged: that.app.session.hasSessionOrToken(),
 			isSubscribed: that.app.push != null && that.app.push.isSubscribed(),
 			user: user,
-			isFacebook: that.app.facebook != null
+			isFacebook: that.app.facebook != null,
+			message: null
 		});
 
 		return result;
@@ -229,7 +230,6 @@ var Login = Plugin.extend({
 		that.app.session.logout()
 			.done(function(result) {
 
-				Ti.API.info('logged out');
 				that.refresh();
 				// fire login event
 				that.app.fireEvent('auth_logout');
@@ -418,15 +418,31 @@ var Login = Plugin.extend({
 	/**
 	* @method showSubscribe
 	* Show a photo in a modal overlay
+	* @param {Object} options
+	* @param {Ti.UI.iOS.NavigationWindow} options.navigation Set a custom navigation to open the form, if specified some operations
+	* will not be performed (like a refresh to the current window)
+	* @deferred
 	*/
-	showSubscribe: function() {
+	showSubscribe: function(opts) {
 
-		Ti.API.info('showSubscribe@login');
+		//Ti.API.info('showSubscribe@login');
+		var default_options = {
+			navigation: null
+		};
+		var options = _.extend(default_options,opts);
 
 		var that = this;
+		var deferred = jQ.Deferred();
 		var layoutManager = that.getLayoutManager();
-		var navigation = that.getNavigation();
+		var navigation = null;
 		var layout = that.getWindowLayout();
+
+		// get the navigation
+		if (options.navigation != null) {
+			navigation = options.navigation;
+		} else {
+			navigation = that.getNavigation();
+		}
 
 		layout.childs = [
 			{
@@ -443,7 +459,10 @@ var Login = Plugin.extend({
 
 		// close events
 		var close = function(evt) {
+			// close navigation
 			navigation.closeWindow(signupWindow);
+			// void deferred
+			deferred.reject();
 		};
 		layoutManager.events({
 			'.pr-toolbarbtn-back': {
@@ -473,14 +492,20 @@ var Login = Plugin.extend({
 								msg.users[0].password
 							).done(function(result) {
 
-								// close the window
-								navigation.closeWindow(signupWindow);
-								// refresh the window
-								that.refresh();
+								// resolve
+								deferred.resolve();
 								// fire signup event
 								that.app.fireEvent('auth_signup');
-								// remove signup action
-								that.setAction(null);
+
+								// refresh the ui, only if no custom navigator was specified
+								if (options.navigation == null) {
+									// close the window
+									navigation.closeWindow(signupWindow);
+									// refresh the window
+									that.refresh();
+									// remove signup action
+									that.setAction(null);
+								}
 
 							}).fail(function(e) {
 								alert(L('login_ErrorOnLogin')+': '+e.message);
@@ -500,6 +525,7 @@ var Login = Plugin.extend({
 
 		navigation.openWindow(signupWindow);
 
+		return deferred.promise();
 	},
 
 
@@ -510,7 +536,7 @@ var Login = Plugin.extend({
 	*/
 	login: function() {
 
-		Ti.API.info('showSubscribe@login');
+		//Ti.API.info('showSubscribe@login');
 
 		var deferred = jQ.Deferred();
 		var that = this;
@@ -525,7 +551,7 @@ var Login = Plugin.extend({
 
 		// ok start the login
 		var layoutManager = that.getLayoutManager();
-		var navigation = that.getNavigation();
+		layoutManager.setVariable('message',L('login_AuthenticateToAccessThisArea'));
 		var layout = that.getWindowLayout({
 			leftButton: {
 				type: 'button',
@@ -546,14 +572,22 @@ var Login = Plugin.extend({
 			window: loginWindow,
 			top: Ti.Platform.displayCaps.platformWidth
 		});
-		var close = function() {
+		var close = function(resolve) {
 			var slideDown = Titanium.UI.createAnimation();
 			slideUp.top = Ti.Platform.displayCaps.platformWidth;
 			slideUp.duration = 200;
 			slideUp.curve = Ti.UI.ANIMATION_CURVE_EASE_OUT;
 			loginNavigator.animate(slideUp,function() {
+				// close the popup window
 				loginNavigator.close();
-				deferred.reject();
+				// destroy layout manager
+				that.clearLayoutManager();
+				// resolve or reject
+				if (resolve) {
+					deferred.resolve();
+				} else {
+					deferred.reject();
+				}
 			});
 		};
 
@@ -562,6 +596,17 @@ var Login = Plugin.extend({
 			'.pr-button-login-facebook': {
 				'click': function() {
 					that.doLoginWithFacebook();
+				}
+			},
+			'.pr-toolbarbtn-action': {
+				'click': function() {
+					// open using current navigation
+					that.showSubscribe({navigation: loginNavigator})
+						.done(function() {
+							that.refresh();
+							// ok subscribed
+							close(true);
+						});
 				}
 			},
 			'.pr-login-twitter': {
@@ -587,8 +632,10 @@ var Login = Plugin.extend({
 					that.app.loader.show(L('login_LoggingIn'));
 					that.doLogin(evt)
 						.done(function() {
-							close();
-							deferred.resolve();
+							// refresh the window if any
+							that.refresh();
+							// close and resolve
+							close(true);
 						})
 						.fail(function() {
 							deferred.reject();
@@ -601,7 +648,8 @@ var Login = Plugin.extend({
 
 			'.pr-toolbarbtn-back': {
 				'click': function() {
-					close();
+					// close and reject
+					close(false);
 				}
 			}
 		});
