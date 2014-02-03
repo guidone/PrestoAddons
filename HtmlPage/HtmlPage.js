@@ -48,6 +48,11 @@ TODO inserire methodo back
 *
 *     <img src="{{contentPath}}{{model.photo.medium_500}}">
 *
+* but is possible to reference an image directly with the name and the postfix for the size (assuming was included in the download
+* {@link presto.models.ContentClass#imageSizes})
+*
+*     <img src="{{contentPath}}my_image_name_small_240.png">
+*
 * The plugin also predefine a sharing capabilities: by default it's shared the full content of the {@link presto.addons.HtmlPage#model}
 * with the html stripped, the image associated to the content using the size defined {@link presto.addons.HtmlPage#zoomSize} and, if
 * present, the link present in the custom field *url*
@@ -81,6 +86,10 @@ var HtmlPagePlugin = Plugin.extend({
       */
       cssStyles: null,
 
+      /**
+      * @cfg {String} [debug=false]
+      * If not sure about what is going on in the html, just enable this to see what HTML code si passed to the webview
+      */
       debug: false,
 
       /**
