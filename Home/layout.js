@@ -7,25 +7,10 @@ module.exports.layout = [
 		type: 'view',
 		className: 'pr-container pr-container-home',
 		childs: [
-
-	{
-		type: 'imageView',
-		backgroundImage: '/assets/windows/top_bg.png',
-		height: '107dp',
-		backgroundRepeat: true,
-		width: Ti.UI.FILL,
-		childs: [
-			{
-				type: 'imageView',
-				image: '/assets/windows/top_logo.png',
-				width: '140dp',
-				height: '80dp'
-				
-			}
-		]
-		
-	},
-
+      {
+        type: 'tag',
+        name: 'HEADER'
+      },
 			{
 				type: 'tag',
 				//name: 'BUTTONS'
@@ -37,12 +22,12 @@ module.exports.layout = [
 						return 'DASHBOARD';
 					}
 				}
-				
-			},
+
+			}
 
 
-			
-		]	
+
+		]
 	}
 ];
 
