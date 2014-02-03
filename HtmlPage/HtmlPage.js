@@ -6,6 +6,7 @@ var Plugin = require('/presto/plugin');
 var jQ = require('/presto/libs/deferred/jquery-deferred');
 var Backbone = require('/presto/components/backbone/backbone');
 var Handlebars = require('/presto/libs/handlebars');
+var logger = require('/presto/logger');
 
 /*
 TODO inserire methodo back
@@ -54,208 +55,220 @@ TODO inserire methodo back
 */
 var HtmlPagePlugin = Plugin.extend({
 
-	className: 'HtmlPage',
+  className: 'HtmlPage',
 
-	/**
-	* @method getDefaults
-	* Get default options of the plugin
-	* @return {Object}
-	*/
-	getDefaults: function() {
+  /**
+  * @method getDefaults
+  * Get default options of the plugin
+  * @return {Object}
+  */
+  getDefaults: function() {
 
-		var result = this._super();
+    var result = this._super();
 
-		return _.extend(result,{
+    return _.extend(result,{
 
-			/**
-			* @cfg {String} template
-			* The inner template to render inside the html page, by default is the first post of the posts collection
-			*/
-			template: '{{{model.content}}}',
+      /**
+      * @cfg {String} template
+      * The inner template to render inside the html page, by default is the first post of the posts collection
+      */
+      template: '{{{model.content}}}',
 
-			/**
-			* @cfg {Array} cssStyles
-			* Array of CSS style to include in the page. Files are relative to the app path, you likely use something like
-			* /assets/my_style.css
-			*/
-			cssStyles: null,
+      /**
+      * @cfg {Array} cssStyles
+      * Array of CSS style to include in the page. Files are relative to the app path, you likely use something like
+      * /assets/my_style.css
+      */
+      cssStyles: null,
 
-			/**
-			* @cfg {String} zoomSize
-			* Size of image to be displayed when zooming, available formats: square_75, thumb_100, small_240, medium_500,
-			* medium_640, large_1024, original
-			*/
-			zoomSize: 'medium_640',
+      debug: false,
 
-			// fix the sharing behaviour, whole text without tags, the image of the current model and link
-			// taken from custom field 'url'
-			sharing: {
-				image: function() {
-					var that = this;
-					var layout = that.getLayoutManager();
-					var options = that.getOptions();
-					var result = null;
-					var photo = _.isFunction(that.model.getPhoto) ? that.model.getPhoto() : null;
-					if (photo != null) {
-						var contentPath = layout.getVariable('contentPath');
-						result = contentPath+photo.get(options.zoomSize);
-					}
-					return result;
-				},
-				text: function() {
-					var text = this.model.getContent({stripHtml: true});
-					var url = this.model.getCustomField('url');
-					if (url != null) {
-						text += '\n\n'+url;
-					}
-					return text;
-				},
-				url: function() {
-					return this.model.getCustomField('url');
-				}
-			}
+      /**
+      * @cfg {String} zoomSize
+      * Size of image to be displayed when zooming, available formats: square_75, thumb_100, small_240, medium_500,
+      * medium_640, large_1024, original
+      */
+      zoomSize: 'medium_640',
 
-		});
+      // fix the sharing behaviour, whole text without tags, the image of the current model and link
+      // taken from custom field 'url'
+      sharing: {
+        image: function() {
+          var that = this;
+          var layout = that.getLayoutManager();
+          var options = that.getOptions();
+          var result = null;
+          var photo = _.isFunction(that.model.getPhoto) ? that.model.getPhoto() : null;
+          if (photo != null) {
+            var contentPath = layout.getVariable('contentPath');
+            result = contentPath+photo.get(options.zoomSize);
+          }
+          return result;
+        },
+        text: function() {
+          var text = this.model.getContent({stripHtml: true});
+          var url = this.model.getCustomField('url');
+          if (url != null) {
+            text += '\n\n'+url;
+          }
+          return text;
+        },
+        url: function() {
+          return this.model.getCustomField('url');
+        }
+      }
 
-	},
+    });
 
-	getWebView: function() {
+  },
 
-		var that = this;
-		var layoutManager = that.getLayoutManager();
-		var views = layoutManager.getByClass('pr-webview');
+  getWebView: function() {
 
-		if (_.isArray(views) && views.length !== 0) {
-			return views[0];
-		} else {
-			return null;
-		}
+    var that = this;
+    var layoutManager = that.getLayoutManager();
+    var views = layoutManager.getByClass('pr-webview');
 
-	},
+    if (_.isArray(views) && views.length !== 0) {
+      return views[0];
+    } else {
+      return null;
+    }
 
-	_loadedContentId: null,
+  },
 
-	/**
-	* @method getVariables
-	* Fix the method, Handlebars doesn't handle backbone directly, so collections and models are serialized. If a current
-	* post is defined, then override the variable 'post', any custom fields defined in ACS are merged into the serialized object
-	* @return {Object}
-	*/
-	getVariables: function() {
+  _loadedContentId: null,
 
-		var that = this;
-		var result = that._super.call(that);
-		var options = that.getOptions();
+  /**
+  * @method getVariables
+  * Fix the method, Handlebars doesn't handle backbone directly, so collections and models are serialized. If a current
+  * post is defined, then override the variable 'post', any custom fields defined in ACS are merged into the serialized object
+  * @return {Object}
+  */
+  getVariables: function() {
 
-		// serialize Backbone models and collections
-		_(result).each(function(value,key) {
+    var that = this;
+    var result = that._super.call(that);
+    var options = that.getOptions();
 
-			// if a model
-			if (value instanceof Backbone.Model) {
-				result[key] = value.toJSON();
-				result[key] = _.extend(result[key],value.getCustomFields());
-			}
+    // serialize Backbone models and collections
+    _(result).each(function(value,key) {
 
-			// if a collection
-			if (value instanceof Backbone.Collection) {
+      // if a model
+      if (value instanceof Backbone.Model) {
+        result[key] = value.toJSON();
+        result[key] = _.extend(result[key],value.getCustomFields());
+      }
 
-				var items = [];
-				value.each(function(item) {
-					var serialized = item.toJSON();
-					serialized = _.extend(serialized,item.getCustomFields());
-					items.push(serialized);
-				});
+      // if a collection
+      if (value instanceof Backbone.Collection) {
 
-				result[key] = items;
-			}
-		});
+        var items = [];
+        value.each(function(item) {
+          var serialized = item.toJSON();
+          serialized = _.extend(serialized,item.getCustomFields());
+          items.push(serialized);
+        });
 
-		// collect the styles
-		result.styles = '';
-		_(options.cssStyles).each(function(style) {
-			result.styles += '<link href="'
-				+result.appPath+style
-				+'" rel="stylesheet" type="text/css" />';
-		});
+        result[key] = items;
+      }
+    });
 
-		// collect the model
-		if (that._model) {
-			result.model = that._model.toJSON();
-		}
-		if (that._collection) {
-			result.collection = that._collection.toJSON();
-		}
+    // collect the styles
+    result.styles = '';
+    _(options.cssStyles).each(function(style) {
+      if (options.debug) {
+        logger.info('[Plugin:HtmlPage] Linking CSS style: '+result.appPath+style);
+      }
+      result.styles += '<link href="'
+        +result.appPath+style
+        +'" rel="stylesheet" type="text/css" />';
+    });
 
-		return result;
-	},
+    // collect the model
+    if (that._model) {
+      result.model = that._model.toJSON();
+    }
+    if (that._collection) {
+      result.collection = that._collection.toJSON();
+    }
+
+    return result;
+  },
 
 
-	/**
-	* @method onBeforeShow
-	* Preload the content in the html, resolve when the load is finished
-	* @deferred
-	*/
-	onBeforeShow: function() {
+  /**
+  * @method onBeforeShow
+  * Preload the content in the html, resolve when the load is finished
+  * @deferred
+  */
+  onBeforeShow: function() {
 
-		//Ti.API.info('onBeforeShow@HtmlPage');
+    //Ti.API.info('onBeforeShow@HtmlPage');
 
-		var that = this;
-		var deferred = jQ.Deferred();
+    var that = this;
+    var deferred = jQ.Deferred();
 
-		var webView = that.getWebView();
-		var moment = that.app.getMoment();
-		var options = that.getOptions();
+    var webView = that.getWebView();
+    var moment = that.app.getMoment();
+    var options = that.getOptions();
 
-		// if content is the same, then resolve immediately
+    // if content is the same, then resolve immediately
 // fix here
-		//if (false && that._loadedContentId == node.posts[0].id) {
-		//	deferred.resolve();
-		//	return deferred.promise();
-		//}
+    //if (false && that._loadedContentId == node.posts[0].id) {
+    //  deferred.resolve();
+    //  return deferred.promise();
+    //}
 
-		var onComplete = function(evt) {
-			webView.removeEventListener('load',onComplete);
-			//that._loadedContentId = node.posts[0].id;
-			deferred.resolve();
-		};
+    var onComplete = function(evt) {
+      webView.removeEventListener('load',onComplete);
+      //that._loadedContentId = node.posts[0].id;
+      deferred.resolve();
+    };
 
-		// get the variables to pass to renderer
-		var variables = that.getVariables();
+    // get the variables to pass to renderer
+    var variables = that.getVariables();
 
-		var templatePath = variables.appPath+'addons/HtmlPage/template.html';
-		var fileHtml = Ti.Filesystem.getFile(templatePath);
-		var fileHtmlContents = fileHtml.read();
-		var layout = fileHtmlContents.toString();
+    var templatePath = variables.appPath+'addons/HtmlPage/template.html';
+    Ti.API.info('Opening layout '+templatePath);
+    var fileHtml = Ti.Filesystem.getFile(templatePath);
+    var fileHtmlContents = fileHtml.read();
+    var layout = fileHtmlContents.toString();
 
-		Handlebars.registerPartial('innerTemplate',options.template);
+    Handlebars.registerPartial('innerTemplate',options.template);
 
-		// register helper
-		Handlebars.registerHelper('dateFormat', function(date) {
-			var tmp = moment(date);
-			return tmp.isValid() ? tmp.format(options.dateFormat) : '';
-		});
-		Handlebars.registerHelper('dateTimeFormat', function(date) {
-			var tmp = moment(date);
-			return tmp.isValid() ? tmp.format(options.dateTimeFormat) : '';
-		});
-		Handlebars.registerHelper('timeFormat', function(date) {
-			var tmp = moment(date);
-			return tmp.isValid() ? tmp.format(options.timeFormat) : '';
-		});
+    // register helper
+    Handlebars.registerHelper('dateFormat', function(date) {
+      var tmp = moment(date);
+      return tmp.isValid() ? tmp.format(options.dateFormat) : '';
+    });
+    Handlebars.registerHelper('dateTimeFormat', function(date) {
+      var tmp = moment(date);
+      return tmp.isValid() ? tmp.format(options.dateTimeFormat) : '';
+    });
+    Handlebars.registerHelper('timeFormat', function(date) {
+      var tmp = moment(date);
+      return tmp.isValid() ? tmp.format(options.timeFormat) : '';
+    });
 
-		var template = Handlebars.compile(layout);
-		var html = template(variables);
+    var template = Handlebars.compile(layout);
+    var html = template(variables);
 
-		// start the view
-		webView.addEventListener('load',onComplete);
-		webView.setHtml(html,{
-			baseURL: variables.contentPath
-		});
+    if (options.debug) {
+      logger.info('----- START HTML PAGE -----');
+      logger.info(html);
+      logger.info('----- END HTML PAGE -----');
+    }
 
-		return deferred.promise();
-	},
+    // start the view
+    webView.addEventListener('load',onComplete);
+    webView.setHtml(html,{
+      baseURL: variables.contentPath
+    });
 
-	_currentPost: null
+    return deferred.promise();
+  },
+
+  _currentPost: null
 
 });
 
@@ -264,14 +277,14 @@ var HtmlPagePlugin = Plugin.extend({
 * Set the post to be displayed
 */
 Object.defineProperty(HtmlPagePlugin.prototype,'post',{
-	get: function() {
-		return this._currentPost;
-	},
-	set: function(currentPost) {
-		this._currentPost = currentPost;
-	},
-	enumerable: true,
-	configurable: true
+  get: function() {
+    return this._currentPost;
+  },
+  set: function(currentPost) {
+    this._currentPost = currentPost;
+  },
+  enumerable: true,
+  configurable: true
 });
 
 
