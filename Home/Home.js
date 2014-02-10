@@ -95,7 +95,6 @@ var Home = Plugin.extend({
 	}
 
 
-
 });
 
 module.exports = Home;
