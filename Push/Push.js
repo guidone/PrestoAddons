@@ -15,25 +15,42 @@ TODO
 
 /**
 * @class presto.addons.Push
-* Suppor for push messages  
+* This plugin enable the support for push messages.
+*
+* Users need to be registered to enable push messages, by default, after signup users are requested to signup push messages
+*
+* To install
+*
+* - generate certificates on dev.apple.com
+* - upload certificate on Titanium ACS
+*
+* It's possible to send message, change the badge count (the little number in the top right corner of the icon) and open the
+* app starting with a specifi plugin
+*
+*     {
+*       badge: 42,
+*       alert: 'my message',
+*       addon: 'id-of-the-plugin-to-open'
+*     }
+*
 * @extend presto.Plugin
 * @requires presto.addons.Login
 */
 var Push = Plugin.extend({
 
 	className: 'Push',
-	
+
 	init: function() {
-	
+
 		var that = this;
-		
+
 		that._super.apply(that,arguments);
 
 		that.addEventListener('auth_login',function() {
 			Ti.API.info('PUSH Logged in');
 			//that.askSubscribe();
 		});
-		
+
 		that.addEventListener('auth_logout',function() {
 			Ti.API.info('PUSH Logged out');
 		});
@@ -59,9 +76,9 @@ var Push = Plugin.extend({
 				]
 			});
 		}
-		
+
 	},
-	
+
 	/**
 	* @method layout
 	* Null the layout, no window is created
@@ -74,28 +91,28 @@ var Push = Plugin.extend({
 	* @return {Object}
 	*/
 	getDefaults: function() {
-	
+
 		var result = this._super();
-					
-		return _.extend(result,{						
-			
+
+		return _.extend(result,{
+
 			id: 'push',
-						
+
 			/**
 			* @cfg {Boolean} [debug=false]
-			* Show the debug menu 
+			* Show the debug menu
 			*/
 			debug: false,
-			
+
 			channels: [
 				{
 					name: 'app'
 				}
 			]
-			
-			
+
+
 		});
-		
+
 	},
 
 	/**
@@ -108,7 +125,7 @@ var Push = Plugin.extend({
 
 		var deferred = jQ.Deferred();
 		var that = this;
-		
+
 		Ti.Network.registerForPushNotifications({
 			success: function(msg) {
 				Ti.API.info('Registrato! '+JSON.stringify(msg));
@@ -130,14 +147,14 @@ var Push = Plugin.extend({
 				Titanium.Network.NOTIFICATION_TYPE_SOUND
 			]
 		});
-		
-		return deferred.promise();		
+
+		return deferred.promise();
 	},
 
 	/**
 	* @event push_message
 	* Fired when a push message is received, even if the application is resumed after a message
-	* @param {Object} payload 
+	* @param {Object} payload
 	*/
 
 	/**
@@ -147,31 +164,31 @@ var Push = Plugin.extend({
 	* @chainable
 	*/
 	executeMessage: function(msg) {
-	
+
 		var that = this;
-		
+
 		// open the plugin if any
-		if (msg.data != null && msg.data.addon != null) {			
+		if (msg.data != null && msg.data.addon != null) {
 			var plugin = that.app.getPluginById(msg.data.addon);
 			// if exists
 			if (plugin != null) {
 				that.app.open(msg.data.addon);
 			}
 		}
-		
+
 		// broadcast message
 		that.app.fireEvent('push_message',msg.data);
-		
-		return that;	
+
+		return that;
 	},
-	
+
 	/**
 	* @method askSubscribe
 	* Ask for subscribe if not yet subscribed
 	* @deferred
 	*/
 	askSubscribe: function() {
-	
+
 		var that = this;
 
 		if (!that.isSubscribed()) {
@@ -182,9 +199,9 @@ var Push = Plugin.extend({
 				.fail(function(e) {
 					alert('push_ErrorWhileSubscribing');
 				});
-			
+
 		}
-			
+
 	},
 
 	/**
@@ -199,18 +216,18 @@ var Push = Plugin.extend({
 	* @deferred
 	*/
 	subscribe: function() {
-		
+
 		Ti.API.info('subscribe@Push');
-		
+
 		var that = this;
 		var deferred = jQ.Deferred();
 		var options = that.getOptions();
-		
+
 		var channel = options.channels[0]; // only one channel for now
-		
+
 		that.getDeviceToken()
 			.done(function(deviceToken) {
-			
+
 				Cloud.PushNotifications.subscribe(
 					{
 						channel: channel.name,
@@ -230,19 +247,19 @@ var Push = Plugin.extend({
 							} else {
 								deferred.reject();
 							}
-							
+
 						}
 					}
-				);				
+				);
 			})
 			.fail(function(e) {
 				deferred.reject(e);
 			});
-		
+
 		return deferred.promise();
-		
+
 	},
-	
+
 	/**
 	* @method unsubscribe
 	* Unsubscribe from notifications
@@ -251,16 +268,16 @@ var Push = Plugin.extend({
 	unsubscribe: function() {
 
 		Ti.API.info('unsubscribe@Push');
-		
+
 		var that = this;
 		var deferred = jQ.Deferred();
 		var options = that.getOptions();
-		
+
 		var channel = options.channels[0]; // only one channel for now
-		
+
 		that.getDeviceToken()
 			.done(function(deviceToken) {
-			
+
 				Cloud.PushNotifications.unsubscribe(
 					{
 						channel: channel.name,
@@ -272,7 +289,7 @@ var Push = Plugin.extend({
 							that.app.config.set('push','subscribed',false);
 							// remove token
 							Ti.Network.unregisterForPushNotifications();
-							
+
 							deferred.resolve();
 						} else {
 							if (e.code == 404) {
@@ -285,14 +302,14 @@ var Push = Plugin.extend({
 							}
 						}
 					}
-				);				
+				);
 			})
 			.fail(function(e) {
 				deferred.reject(e);
 			});
-		
+
 		return deferred.promise();
-		
+
 	},
 
 	/**
@@ -301,35 +318,35 @@ var Push = Plugin.extend({
 	* @return {Boolean}
 	*/
 	isSubscribed: function() {
-		
+
 		var that = this;
 
 		var subscribed = that.app.config.get('push','subscribed');
-		
+
 		return subscribed === true;
-		
+
 	},
 
 	/**
 	* @method onInit
 	* Start and reset the badge
-	* @deferred 
+	* @deferred
 	*/
 	onInit: function() {
-		
+
 		//var that = this;
 		var deferred = jQ.Deferred();
 		//var options = that.getOptions();
-				
+
 		// set the app badge to zero
 		Titanium.UI.iPhone.appBadge = 0;
-		
+
 		// resolve
 		deferred.resolve();
-		
+
 		return deferred.promise();
 	}
-	
+
 });
 
 module.exports = Push;

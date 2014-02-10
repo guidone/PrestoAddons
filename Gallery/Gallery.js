@@ -14,7 +14,7 @@ TODO
 
 /**
 * @class presto.addons.Gallery
-* Gallery of images and full page image viewer  
+* Gallery of images and full page image viewer
 * @extend presto.Plugin
 */
 var GalleryPlugin = Plugin.extend({
@@ -27,15 +27,22 @@ var GalleryPlugin = Plugin.extend({
 	* @param {presto.models.Photo} photo
 	*/
 	showPhoto: function(photo) {
-		
-		Ti.API.info('showPhoto@Gallery '+JSON.stringify(photo));
+
 		var that = this;
 		var layoutManager = that.getLayoutManager();
 		var options = that.getOptions();
-		
+
+    // check if caption
+    var caption = options.caption;
+    if (_.isEmpty(photo.get('title')) && _.isEmpty(photo.get('description'))) {
+      caption = false;
+    }
+
 		// set the photo to be displayed
 		layoutManager.setVariable('photo',photo);
 		layoutManager.setVariable('zoomSize',options.zoomSize);
+		layoutManager.setVariable('caption',caption);
+
 		// create the layout
 		var overlayWindow = layoutManager.createLayout('OVERLAY');
 		// attach close
@@ -43,8 +50,8 @@ var GalleryPlugin = Plugin.extend({
 
 		// close events
 		var close = function(evt) {
-			overlayWindow.close();	
-		};		
+			overlayWindow.close();
+		};
 		layoutManager.events({
 			'#btn-close': {
 				'click': close
@@ -56,49 +63,49 @@ var GalleryPlugin = Plugin.extend({
 				'click': function() {
 
 					var share = that.app.getPluginById('share');
-					share.share(that);			
+					share.share(that);
 
 				}
-			}			
+			}
 		});
-		
+
 		// open the window
 		// Titanium.UI.iPhone.MODAL_TRANSITION_STYLE_FLIP_HORIZONTAL
-		// Titanium.UI.iPhone.MODAL_TRANSITION_STYLE_PARTIAL_CURL				
+		// Titanium.UI.iPhone.MODAL_TRANSITION_STYLE_PARTIAL_CURL
 		overlayWindow.open({
 			fullscreen: true,
 			modal: true,
 			animated: true,
 			modalTransitionStyle: Titanium.UI.iPhone.MODAL_TRANSITION_STYLE_COVER_VERTICAL
 		});
-				
+
 	},
 
-	
+
 	/**
 	* @method clickThumb
 	* Handle the click on the table, calls onClick passing the event and the post as paramenter, the context is the plugin
 	* @param {Object} event
 	*/
 	clickThumb: function(evt) {
-	
+
 		Ti.API.info('clickTable@gallery'+JSON.stringify(evt.source));
-		
+
 		var that = this;
 		var layoutManager = that.getLayoutManager();
 		var photo = layoutManager.getDataFromElement(evt.source);
 		var options = that.getOptions();
 
-		//Ti.API.info('photo'+JSON.stringify(photo))				
+		//Ti.API.info('photo'+JSON.stringify(photo))
 		// callback
 		if (_.isFunction(options.onClick)) {
 			options.onClick.call(that,evt,photo);
 		} else {
 			that.showPhoto(photo);
 		}
-		
+
 	},
-	
+
 	events: {
 		'.pr-thumb': {
 			'click': 'clickThumb'
@@ -111,50 +118,56 @@ var GalleryPlugin = Plugin.extend({
 		'POSTLIST': '/addons/Gallery/layout/list.js',
 		'OVERLAY': '/addons/Gallery/layout/overlay.js'
 	},
-	
+
 	/**
 	* @method getDefaults
 	* Get default options of the plugin
 	* @return {Object}
 	*/
 	getDefaults: function() {
-	
+
 		var result = this._super();
-		
+
 		return _.extend(result,{
-						
+
 			/**
 			* @cfg {Function} onClick
 			* Executed on click of element, second argument is the clicked Backbone model
 			*/
 			onClick: null,
-			
+
 			/**
 			* @cfg {String} zoomSize
 			* Size of image to be displayed when zooming, available formats: square_75, thumb_100, small_240, medium_500,
 			* medium_640, large_1024, original
 			*/
 			zoomSize: 'medium_640',
-			
+
+      /**
+      * @cfg {Boolean} [caption=true]
+      * Show caption below the image
+      */
+      caption: true,
+
 			sharing: {
 				text: function() {
-					var that = this;			
+					var that = this;
 					var layout = that.getLayoutManager();
 					var photo = layout.getVariable('photo');
 					return photo.get('title') != null ? photo.get('title') : photo.get('filename');
 				},
 				image: function() {
-					var that = this;			
+					var that = this;
 					var layout = that.getLayoutManager();
 					var photo = layout.getVariable('photo');
 					var contentPath = layout.getVariable('contentPath');
 					var zoomSize = layout.getVariable('zoomSize');
 					return contentPath+photo.get(zoomSize);
-				}		
+				}
 			}
-						
+
 		});
-		
+
 	}
 
 });
