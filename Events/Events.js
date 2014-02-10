@@ -13,13 +13,14 @@ TODO
 
 /**
 * @class presto.addons.Events
-* Master detail post list 
+* Master detail post list, it automatically register a plugin {@link presto.addons.HtmlPage} to display the detail of the event
+* and a content class events
 * @extend presto.addons.Posts
 */
 var EventsPlugin = Posts.extend({
-	
+
 	className: 'Events',
-		
+
 	/**
 	* @method onInitialize
 	* Inizialize the plugin, register the detail plugin
@@ -29,65 +30,65 @@ var EventsPlugin = Posts.extend({
 
 		var that = this;
 		var options = that.getOptions();
-		
-		that.app.registerPlugin('HtmlPage',{	
+
+		that.app.registerPlugin('HtmlPage',{
 			id: 'eventDetail',
 			title: null,
-			template: options.template,				
+			template: options.template,
 			cssStyles: [
 				'/assets/style.css'
 			],
 			zoomSize: options.zoomSize, // must be the same
-			action: 'share'	
+			action: 'share'
 		});
 
-		// copy in content class		
+		// copy in content class
 		that._options.content.language = that._options.language;
-	
-		return that;	
+
+		return that;
 	},
-	
+
 	/**
 	* @method getDefaults
 	* Get default options of the plugin
 	* @return {Object}
 	*/
 	getDefaults: function() {
-	
+
 		var that = this;
 		var result = that._super();
-		
+
 		result = _.extend(result,{
-			
+
 			// handle the click
 			onClick: function(evt,model) {
 				that.open('eventDetail',{
-					model: model	
-				});					
+					model: model
+				});
 			},
-			
+
 			tags: {
 				//'/Volumes/Macintosh HD/web/presto/Resources/addons/Posts/layout/header.js'
 				'HEADER': '/addons/Events/layout/header.js',
 				'EVENTLIST': '/addons/Events/layout/list.js'
 			},
-			
+
 			// fixed zoom size
 			zoomSize: 'medium_500',
-			
+
 			// fixed content class
 			content: {
 				imageSizes: ['square_75','thumb_100','medium_500'],
 				className: 'events',
-				types: ['events','photos']			
+				types: ['events','photos']
 			},
-			
+
 			/**
 			* @cfg {Boolean} language
 			* Tells if content is language aware
 			*/
 			language: false,
-			
+
 			/**
 			* @property {String} template
 			* The HTML template to be shown in the detail of the event
@@ -95,13 +96,13 @@ var EventsPlugin = Posts.extend({
 			template: '<h4>{{dateTimeFormat model.start_time}}</h4>'
 				+'<h1>{{model.title}}</h1>'
 				+'<img src="{{contentPath}}{{model.photo.medium_500}}" width="100%" align="center"><br>'
-				+'{{{model.content}}}'				
-			
+				+'{{{model.content}}}'
+
 		});
 
-		return result;	
-	}	
-	
+		return result;
+	}
+
 });
 
 module.exports = EventsPlugin;
