@@ -189,7 +189,7 @@ var HtmlPagePlugin = Plugin.extend({
         logger.info('[Plugin:HtmlPage] Linking CSS style: '+result.appPath+style);
       }
       result.styles += '<link href="'
-        +result.appPath+style
+        +result.appPath+style+'?'+Math.random()
         +'" rel="stylesheet" type="text/css" />';
     });
 

@@ -5,6 +5,7 @@ var _ = require('/presto/libs/underscore');
 var Plugin = require('/presto/plugin');
 var jQ = require('/presto/libs/deferred/jquery-deferred');
 var TiMap = require('ti.map');
+var logger = require('/presto/logger');
 
 /*
 TODO
@@ -113,6 +114,13 @@ var WhereToFindUs = Plugin.extend({
 			*/
 			longitudeDelta: 0.1,
 
+      /**
+       * @property [debug=false]
+       * Put the plugin in demo mode, allow to move around the pin and get a perfect coordinate (long press to move,
+       * click on the pin to get the coordinate in the console log)
+       */
+      debug: false,
+
 			action: 'directions'
 
 
@@ -162,6 +170,7 @@ var WhereToFindUs = Plugin.extend({
 			annotations: [
 				{
 					animate: true,
+          draggable: options.debug,
 					latitude: options.latitude,
 					longitude: options.longitude,
 					title: options.company,
@@ -188,10 +197,17 @@ var WhereToFindUs = Plugin.extend({
 				});
 			},400);
 
-			that._map.removeEventListener('complete',onComplete);
+			that._map.removeEventListener('complete', onComplete);
 		};
 
-		that._map.addEventListener('complete',onComplete);
+		that._map.addEventListener('complete', onComplete);
+
+    // in debug mode, show the coordinates
+    if (options.debug) {
+      that._map.addEventListener('click', function (e) {
+        logger.info('Current position -> latitude: ' + e.annotation.latitude + ' longitude: ' + e.annotation.longitude);
+      });
+    }
 
 		// attach link
 		/*var annotations = that._map.getAnnotations();

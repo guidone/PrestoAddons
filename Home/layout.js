@@ -9,12 +9,21 @@ module.exports.layout = [
 		childs: [
       {
         type: 'tag',
-        name: 'HEADER'
+        name: function(style, obj) {
+
+          var type = this.getVariable('header');
+
+          if (type == 'banner') {
+            return 'BANNER';
+          } else {
+            return 'LOGO';
+          }
+        }
       },
 			{
 				type: 'tag',
 				//name: 'BUTTONS'
-				name: function(style,obj) {
+				name: function(style, obj) {
 					var type = this.getVariable('type');
 					if (type == 'buttons') {
 						return 'BUTTONS';

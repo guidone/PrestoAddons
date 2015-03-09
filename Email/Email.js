@@ -115,7 +115,7 @@ var Email = Plugin.extend({
 			if (e.success) {
 				deferred.resolve();
 			} else {
-				deferred.reejct(e);
+				deferred.reject(e);
 			}
 		});
 

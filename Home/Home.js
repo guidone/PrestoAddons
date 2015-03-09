@@ -22,12 +22,13 @@ TODO
 var Home = Plugin.extend({
 
 	className: 'Home',
-  version: '0.1.0',
+  version: '0.1.1',
 
 	tags: {
 		'BUTTONS': '/addons/Home/layout/buttons.js',
 		'DASHBOARD': '/addons/Home/layout/dashboard.js',
-		'HEADER': '/addons/Home/layout/header.js',
+		'LOGO': '/addons/Home/layout/logo.js',
+    'BANNER': '/addons/Home/layout/banner.js'
 	},
 
 	/**
@@ -48,7 +49,13 @@ var Home = Plugin.extend({
 			* @cfg {String} type
 			* Type of home page: buttons - a simple list of buttons, dasboard - a spring board like list of icons
 			*/
-			type: 'dashboard'
+			type: 'dashboard',
+
+      /**
+       * @cfg {String} header
+       * Tells the type of the header: logo, banner
+       */
+      header: 'logo'
 
 
 		});
@@ -63,6 +70,8 @@ var Home = Plugin.extend({
 
 		result.buttons = options.buttons;
 		result.type = options.type;
+    result.header = options.header;
+    result.banner = options.banner;
 
 		return result;
 	},
